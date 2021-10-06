@@ -10,6 +10,7 @@
         </li>
         {% if post.group_id %}
           <li class="list-group-item">
+            Группа: {{ post.group.slug }}
             <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
           </li>
         {% endif %}
@@ -29,8 +30,13 @@
     </aside>
       <article class="col-12 col-md-9">
         <p>
-          {{ post.text }}}
+          {{ post.text }}
         </p>
+        {% if user.is_authenticated %}
+          {% if post.author.username == user.username %}
+            <a class="btn btn-primary" href="{% url 'posts:post_edit' post.id %}">редактировать запись</a>
+          {% endif %}
+        {% endif %}
     </article>
   </div> 
 {% endblock %}

@@ -25,10 +25,10 @@
       {% if user.is_authenticated %}
       <li class="nav-item"> 
         <a class="nav-link
-          {% if request.resolver_match.view_name  == '<!--  -->' %}
+          {% if request.resolver_match.view_name  == 'posts:post_create' %}
             active
           {% endif %}"
-          href="<!--  -->">Новая запись</a>
+          href="{% url 'posts:post_create' %}">Новая запись</a>
       </li>
       <li class="nav-item"> 
         <a class="nav-link link-light
@@ -50,14 +50,14 @@
       {% else %}
       <li class="nav-item"> 
         <a class="nav-link link-light
-        {% if request.resolver_match.view_name  == 'users:logout' %}
+        {% if request.resolver_match.view_name  == 'users:login' %}
           active
         {% endif %}"
         href="{% url 'users:login' %}">Войти</a>
       </li>
       <li class="nav-item"> 
         <a class="nav-link link-light
-        {% if request.resolver_match.view_name  == 'users:logout' %}
+        {% if request.resolver_match.view_name  == 'users:signup' %}
           active
         {% endif %}"
         href="{% url 'users:signup' %}">Регистрация</a>
