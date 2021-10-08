@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 {% block title %}
-  {% if is_edit %}
-    Редактирование поста
-  {% else %}
-    Новый пост
-  {% endif %}
+  {{ is_edit|yesno:"Редактировать пост,Новый пост" }}
 {% endblock %}
 
 {% block content %}
@@ -12,11 +8,7 @@
     <div class="col-md-8 p-5">
       <div class="card">
         <div class="card-header">
-          {% if is_edit %}
-            Редактировать пост
-          {% else %}
-            Новый пост
-          {% endif %}
+          {{ is_edit|yesno:"Редактировать пост,Новый пост" }}
         </div>
         
         <div class="card-body">      
@@ -26,7 +18,7 @@
               <div class="form-group row my-3 p-3">
                 {% if field.id_for_label == "id_text" %}
                   <label for="{{ field.id_for_label }}">
-                    Текст:
+                    {{ field.label }}
                     <span class="required text-danger">*</span>
                   </label>
                   <textarea name="text" cols="40" rows="10" class="form-control" required id="id_text">
@@ -35,11 +27,11 @@
                     {% endif %}
                   </textarea>
                   <small id="id_text-help" class="form-text text-muted">
-                    Текст нового поста
+                    {{ field.label }}
                   </small>
                 {% else %}
                   <label for="{{ field.id_for_label }}">
-                    Группа:
+                    {{ field.label }}
                   </label>
                   <select name="group" class="form-control" id="{{ field.id_for_label }}">
                     {% for id in field %}

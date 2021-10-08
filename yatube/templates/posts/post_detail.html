@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %} {{ post }} {% endblock %}
+{% block title %} {{ post|truncatechars:20 }} {% endblock %}
 
 {% block content %}
   <div class="row">
@@ -19,7 +19,7 @@
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
           Всего постов автора:
-          <span > {{ count }}</span>
+          <span > {{ user_posts.count }} </span>
         </li>
         <li class="list-group-item">
           <a href="{% url 'posts:profile' post.author %}">
@@ -33,7 +33,7 @@
           {{ post.text }}
         </p>
         {% if user.is_authenticated %}
-          {% if post.author.username == user.username %}
+          {% if post.author == user %}
             <a class="btn btn-primary" href="{% url 'posts:post_edit' post.id %}">редактировать запись</a>
           {% endif %}
         {% endif %}
