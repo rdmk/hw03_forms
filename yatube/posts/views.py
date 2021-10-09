@@ -50,10 +50,8 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    user = Post.objects.filter(author=post.author)
     context = {
         'post': post,
-        'user_posts': user
     }
     return render(request, 'posts/post_detail.html', context)
 

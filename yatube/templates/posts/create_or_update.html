@@ -4,6 +4,7 @@
 {% endblock %}
 
 {% block content %}
+{% load user_filters %}
   <div class="row justify-content-center">
     <div class="col-md-8 p-5">
       <div class="card">
@@ -15,43 +16,33 @@
           <form method="post" action="">
             {% csrf_token %}
             {% for field in form %}
-              <div class="form-group row my-3 p-3">
-                {% if field.id_for_label == "id_text" %}
-                  <label for="{{ field.id_for_label }}">
-                    {{ field.label }}
-                    <span class="required text-danger">*</span>
-                  </label>
-                  <textarea name="text" cols="40" rows="10" class="form-control" required id="id_text">
-                    {% if is_edit %}
-                      {{ field.value }}
-                    {% endif %}
-                  </textarea>
-                  <small id="id_text-help" class="form-text text-muted">
-                    {{ field.label }}
-                  </small>
+              <div class="form-group row my-3 p-3"
+                {% if field.field.required %} 
+                  aria-required="true"
                 {% else %}
-                  <label for="{{ field.id_for_label }}">
-                    {{ field.label }}
-                  </label>
-                  <select name="group" class="form-control" id="{{ field.id_for_label }}">
-                    {% for id in field %}
-                      {{ id }} {{ post.group.slug }}
-                    {% endfor %}
-                  </select>
-                  <small id="id_group-help" class="form-text text-muted">
-                    Группа, к которой будет относиться пост
-                  </small>
+                  aria-required="false"
                 {% endif %}
+              >
+                <label for="{{ field.id_for_label }}">
+                  {{ field.label }}
+                    {% if field.field.required %}
+                      <span class="required text-danger">*</span>
+                    {% endif %}
+                </label>
+                {{ field|addclass:'form-control' }}
+                <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+                  {% if field.label == "Текст"%}
+                    Текст нового поста
+                  {% else %}
+                    Группа, к которой будет относиться пост
+                  {% endif %}
+                </small>
               </div>
             {% endfor %}
 
             <div class="d-flex justify-content-end">
               <button type="submit" class="btn btn-primary">
-                {% if is_edit %}
-                  Сохранить
-                {% else %}
-                  Добавить
-                {% endif %}
+                {{ is_edit|yesno:"Сохранить,Добавить" }}
               </button>
             </div>
           </form>
