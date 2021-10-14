@@ -1,7 +1,9 @@
-from deals.models import Task
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
-from django.http import response
 from django.test import Client, TestCase
+
+from ..models import Group, Post
 
 User = get_user_model()
 
@@ -10,67 +12,93 @@ class StaticURLTests(TestCase):
     def setUp(self):
         self.guest_client = Client()
 
-    def test_homepage(self):
-        response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, 200)
+    def test_static_urls_exists_at_desired_location(self):
+        """Страницы доступны любому пользователю."""
+        static_urls = {
+            '/': HTTPStatus.OK,
+            '/about/author/': HTTPStatus.OK,
+            '/about/tech/': HTTPStatus.OK
+        }
+        for address, response_on_url in static_urls.items():
+            with self.subTest(address=address):
+                response = self.guest_client.get(address)
+                self.assertAlmostEqual(response.status_code, response_on_url)
 
-    def test_author_page(self):
-        response = self.guest_client.get('/about/author/')
-        self.assertAlmostEqual(response.status_code, 200)
+    def test_static_pages_have_correct_template(self):
+        """URL-адрес использует соответствующий шаблон."""
+        static_templates = {
+            '/': 'posts/index.html',
+            '/about/author/': 'about/author.html',
+            '/about/tech/': 'about/tech.html'
+        }
+        for address, template in static_templates.items():
+            with self.subTest(address=address):
+                response = self.guest_client.get(address)
+                self.assertTemplateUsed(response, template)
 
-    def test_tech_page(self):
-        response = self.guest_client.get('/about/tech/')
-        self.assertAlmostEqual(response.status_code, 200)
 
-
-class TaskURLTests(TestCase):
+class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Создадим запись в БД для проверки доступности адреса task/test-slug/
-        Task.objects.create(
-            title='Тестовый заголовок',
+        Group.objects.create(
+            title='test-title',
+            slug='test-slug',
+            description='test-decsr',
+        )
+        cls.post = Post.objects.create(
             text='Тестовый текст',
-            slug='test-slug'
+            author=User.objects.create_user(username='Test_user'),
+            pk='1234',
+
         )
 
     def setUp(self):
-        # Создаем неавторизованный клиент
         self.guest_client = Client()
-        # Создаем пользователя
         self.user = User.objects.create_user(username='HasNoName')
-        # Создаем второй клиент
         self.authorized_client = Client()
-        # Авторизуем пользователя
         self.authorized_client.force_login(self.user)
 
-    def test_home_url_exists_at_desired_location(self):
-        response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, 200)
+    def test_urls_exists_at_desired_location(self):
+        """Проверка страниц на доступность."""
+        static_urls = {
+            '/': HTTPStatus.OK,
+            '/create/': HTTPStatus.OK,
+            '/group/test-slug/': HTTPStatus.OK,
+            '/profile/HasNoName/': HTTPStatus.OK,
+            '/posts/1234/': HTTPStatus.OK,
+            '/posts/1234/edit/': HTTPStatus.OK,
+        }
+        for address, response_on_url in static_urls.items():
+            with self.subTest(address=address):
+                if address == '/posts/1234/edit/':
+                    author = User.objects.get(username='Test_user')
+                    self.authorized_client = Client()
+                    self.authorized_client.force_login(author)
+                response = self.authorized_client.get(address)
+                self.assertAlmostEqual(response.status_code, response_on_url)
 
-    def test_group_slug_exists_at_desired_location(self):
-        response = self.guest_client.get('/group/<slug:slug>/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_profile_username_exists_at_desired_location(self):
-        response = self.guest_client.get('/profile/<str:username>/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_id_exists_at_desired_location(self):
-        response = self.guest_client.get('/posts/<int:post_id>/')
-        self.assertEqual(response.status_code, 200)
-
-#    def test_post_id_edit_exists_at_desired_location(self):
-        # нужно добавить свойства автора
-#        response = self.authorized_client.get('/posts/<int:post_id>/edit/')
-#        self.assertEqual(response.status_code, 200)
-
-
-    def test_post_id_edit_exists_at_desired_location(self):
-        response = self.authorized_client.get('/create/')
-        self.assertEqual(response.status_code, 200)
-    
     def test_unexisting_page(self):
         response = self.authorized_client.get('/unexisting_page/')
         self.assertEqual(response.status_code, 404)
 
+    def test_urls_uses_correct_template(self):
+        """URL-адрес использует соответствующий шаблон."""
+        templates_url_names = {
+            '/': 'posts/index.html',
+            '/create/': 'posts/create_or_update.html',
+            '/group/test-slug/': 'posts/group_list.html',
+            '/profile/HasNoName/': 'posts/profile.html',
+            '/posts/1234/': 'posts/post_detail.html',
+            '/posts/1234/edit/': 'posts/create_or_update.html',
+        }
+        for address, template in templates_url_names.items():
+            with self.subTest(address=address):
+                if address == '/posts/1234/edit/':
+                    author = User.objects.get(username='Test_user')
+                    self.authorized_client = Client()
+                    response = self.authorized_client.force_login(author)
+                else:
+                    response = self.authorized_client.get(address)
+                print('\n', response, template, address,)
+                self.assertTemplateUsed(response, template)
