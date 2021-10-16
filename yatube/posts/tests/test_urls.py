@@ -41,22 +41,22 @@ class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        Group.objects.create(
+        cls.group = Group.objects.create(
             title='test-title',
             slug='test-slug',
             description='test-decsr',
         )
+        cls.user = User.objects.create_user(username='Test_user')
         cls.post = Post.objects.create(
             text='Тестовый текст',
-            author=User.objects.create_user(username='Test_user'),
+            author=cls.user,
+            group=cls.group,
             pk='1234',
-
         )
 
     def setUp(self):
         self.guest_client = Client()
-        self.user = User.objects.create_user(username='HasNoName')
-        self.authorized_client = Client()
+        self.authorized_client = Client(self.user)
         self.authorized_client.force_login(self.user)
 
     def test_urls_exists_at_desired_location(self):
@@ -65,18 +65,14 @@ class PostURLTests(TestCase):
             '/': HTTPStatus.OK,
             '/create/': HTTPStatus.OK,
             '/group/test-slug/': HTTPStatus.OK,
-            '/profile/HasNoName/': HTTPStatus.OK,
+            '/profile/Test_user/': HTTPStatus.OK,
             '/posts/1234/': HTTPStatus.OK,
             '/posts/1234/edit/': HTTPStatus.OK,
         }
         for address, response_on_url in static_urls.items():
             with self.subTest(address=address):
-                if address == '/posts/1234/edit/':
-                    author = User.objects.get(username='Test_user')
-                    self.authorized_client = Client()
-                    self.authorized_client.force_login(author)
                 response = self.authorized_client.get(address)
-                self.assertAlmostEqual(response.status_code, response_on_url)
+                self.assertEqual(response.status_code, response_on_url)
 
     def test_unexisting_page(self):
         response = self.authorized_client.get('/unexisting_page/')
@@ -88,17 +84,11 @@ class PostURLTests(TestCase):
             '/': 'posts/index.html',
             '/create/': 'posts/create_or_update.html',
             '/group/test-slug/': 'posts/group_list.html',
-            '/profile/HasNoName/': 'posts/profile.html',
+            '/profile/Test_user/': 'posts/profile.html',
             '/posts/1234/': 'posts/post_detail.html',
             '/posts/1234/edit/': 'posts/create_or_update.html',
         }
         for address, template in templates_url_names.items():
             with self.subTest(address=address):
-                if address == '/posts/1234/edit/':
-                    author = User.objects.get(username='Test_user')
-                    self.authorized_client = Client()
-                    response = self.authorized_client.force_login(author)
-                else:
-                    response = self.authorized_client.get(address)
-                print('\n', response, template, address,)
+                response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
